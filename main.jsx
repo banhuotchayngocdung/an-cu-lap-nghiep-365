@@ -84,9 +84,9 @@ function App(){
         />
 
         <Route
-          path="/admin"
-          element={<Admin/>}
-        />
+  path="/admin"
+  element={<AdminGate/>}
+/>
 
       </Routes>
 
@@ -674,6 +674,51 @@ function AdminLogin(){
     </main>
 
   );
+
+}
+/* =========================
+   KIỂM TRA ĐĂNG NHẬP ADMIN
+========================= */
+
+function AdminGate(){
+
+  const [user,setUser] = useState(null);
+  const [loading,setLoading] = useState(true);
+
+  useEffect(()=>{
+
+    const checkUser = async()=>{
+
+      const {data} = await supabase.auth.getUser();
+
+      setUser(data.user || null);
+      setLoading(false);
+
+    };
+
+    checkUser();
+
+  },[]);
+
+  if(loading){
+
+    return (
+      <main className="wrap adminpage">
+        <div className="state">
+          Đang kiểm tra đăng nhập…
+        </div>
+      </main>
+    );
+
+  }
+
+  if(!user){
+
+    return <AdminLogin/>;
+
+  }
+
+  return <Admin/>;
 
 }
 
