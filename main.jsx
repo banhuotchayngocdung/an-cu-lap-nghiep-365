@@ -683,46 +683,349 @@ function AdminLogin(){
 ========================= */
 
 function Admin(){
+  const [rooms,setRooms]=useState([]);
+  const [msg,setMsg]=useState("");
+  const [editing,setEditing]=useState(null);
+  const [saving,setSaving]=useState(false);
 
-  const [user,setUser] = useState(null);
-  const [checking,setChecking] = useState(true);
+  const load=async()=>{
+    setMsg("");
 
+    const {data,error}=await supabase
+      .from("rooms")
+      .select("*")
+      .order("code");
+
+    if(error){
+      setMsg(error.message);
+    }else{
+      setRooms(data||[]);
+    }
+  };
 
   useEffect(()=>{
-
-    supabase.auth.getUser()
-      .then(({data})=>{
-
-        setUser(data.user || null);
-        setChecking(false);
-
-      });
-
+    load();
   },[]);
 
+  const editRoom=(r)=>{
+    setEditing({...r});
+    setMsg("");
+  };
 
-  if(checking){
+  const saveRoom=async()=>{
+    if(!editing) return;
 
-    return (
-      <main className="wrap state">
-        Đang kiểm tra đăng nhập…
-      </main>
-    );
+    setSaving(true);
+    setMsg("");
 
-  }
+    const {error}=await supabase
+      .from("rooms")
+      .update({
+        code: editing.code,
+        khu_vuc: editing.khu_vuc,
+        dia_chi: editing.dia_chi,
+        loai_hinh: editing.loai_hinh,
+        gia_thue: editing.gia_thue
+          ? Number(editing.gia_thue)
+          : null,
+        tien_coc: editing.tien_coc
+          ? Number(editing.tien_coc)
+          : null,
+        dien_tich: editing.dien_tich
+          ? Number(editing.dien_tich)
+          : null,
+        tang: editing.tang
+          ? Number(editing.tang)
+          : null,
+        mo_ta: editing.mo_ta,
+        noi_that: editing.noi_that,
+        so_dien_thoai: editing.so_dien_thoai,
+        so_zalo: editing.so_zalo,
+        trang_thai: editing.trang_thai
+      })
+      .eq("id",editing.id);
 
+    setSaving(false);
 
-  if(!user){
+    if(error){
+      setMsg(error.message);
+      return;
+    }
 
-    return <AdminLogin/>;
+    setMsg("✅ Đã lưu thông tin phòng.");
 
-  }
+    setEditing(null);
 
+    load();
+  };
 
-  return <AdminPanel user={user}/>;
+  return (
+    <main className="wrap adminpage">
 
+      <h1>Quản lý phòng</h1>
+
+      <p>
+        Đang đăng nhập: <b>tài khoản quản trị</b>
+      </p>
+
+      {msg && (
+        <div className="error">
+          {msg}
+        </div>
+      )}
+
+      {!editing && (
+        <div className="table">
+
+          {rooms.map(r=>(
+            <div className="tr" key={r.id}>
+
+              <div>
+                <b>{r.code}</b>
+
+                <small>
+                  {r.dia_chi || r.khu_vuc || ""}
+                </small>
+              </div>
+
+              <div>
+                <span className={"badge "+r.trang_thai}>
+                  {labels[r.trang_thai] || r.trang_thai}
+                </span>
+
+                <button
+                  onClick={()=>editRoom(r)}
+                  style={{marginLeft:"10px"}}
+                >
+                  Sửa
+                </button>
+              </div>
+
+            </div>
+          ))}
+
+        </div>
+      )}
+
+      {editing && (
+        <div className="editbox">
+
+          <h2>Sửa phòng {editing.code}</h2>
+
+          <label>
+            Mã phòng
+            <input
+              value={editing.code || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  code:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Khu vực
+            <input
+              value={editing.khu_vuc || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  khu_vuc:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Địa chỉ
+            <input
+              value={editing.dia_chi || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  dia_chi:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Loại hình
+            <input
+              value={editing.loai_hinh || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  loai_hinh:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Giá thuê
+            <input
+              type="number"
+              value={editing.gia_thue || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  gia_thue:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Tiền cọc
+            <input
+              type="number"
+              value={editing.tien_coc || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  tien_coc:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Diện tích (m²)
+            <input
+              type="number"
+              value={editing.dien_tich || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  dien_tich:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Tầng
+            <input
+              type="number"
+              value={editing.tang || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  tang:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Nội thất
+            <textarea
+              value={editing.noi_that || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  noi_that:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Mô tả
+            <textarea
+              value={editing.mo_ta || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  mo_ta:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Số điện thoại
+            <input
+              value={editing.so_dien_thoai || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  so_dien_thoai:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Số Zalo
+            <input
+              value={editing.so_zalo || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  so_zalo:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Trạng thái
+
+            <select
+              value={editing.trang_thai || ""}
+              onChange={e=>
+                setEditing({
+                  ...editing,
+                  trang_thai:e.target.value
+                })
+              }
+            >
+              <option value="trong">
+                Đang trống
+              </option>
+
+              <option value="sap_trong">
+                Sắp trống
+              </option>
+
+              <option value="da_thue">
+                Đã thuê
+              </option>
+
+              <option value="ngung">
+                Ngừng cho thuê
+              </option>
+            </select>
+          </label>
+
+          <div className="actions">
+
+            <button
+              onClick={saveRoom}
+              disabled={saving}
+            >
+              {saving ? "Đang lưu..." : "💾 Lưu thay đổi"}
+            </button>
+
+            <button
+              onClick={()=>setEditing(null)}
+              disabled={saving}
+            >
+              Hủy
+            </button>
+
+          </div>
+
+        </div>
+      )}
+
+    </main>
+  );
 }
-
 
 /* =========================
    ADMIN PANEL
