@@ -595,3 +595,113 @@ footer{
   }
 
 }
+/* =========================
+   FORM SỬA PHÒNG
+   ========================= */
+
+.editbox{
+  background:#fff;
+  border:1px solid #e1e6e1;
+  border-radius:18px;
+  padding:25px;
+  margin-top:20px;
+  box-shadow:0 5px 20px rgba(0,0,0,.04);
+}
+
+.editbox h2{
+  margin:0 0 25px;
+  color:#172019;
+  font-size:24px;
+}
+
+.editbox label{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:18px;
+  color:#344139;
+  font-weight:bold;
+  font-size:14px;
+}
+
+.editbox input,
+.editbox select,
+.editbox textarea{
+  width:100%;
+  min-height:45px;
+  padding:11px 13px;
+  border:1px solid #d5ddd6;
+  border-radius:9px;
+  background:#fff;
+  color:#172019;
+  font-family:Arial,sans-serif;
+  font-size:15px;
+  outline:none;
+}
+
+.editbox textarea{
+  min-height:100px;
+  resize:vertical;
+  line-height:1.5;
+}
+
+.editbox input:focus,
+.editbox select:focus,
+.editbox textarea:focus{
+  border-color:#166534;
+  box-shadow:0 0 0 3px rgba(22,101,52,.10);
+}
+
+.editbox .actions{
+  display:flex;
+  gap:10px;
+  margin-top:25px;
+}
+
+.editbox .actions button{
+  min-height:45px;
+  padding:10px 18px;
+  border:1px solid #d5ddd6;
+  border-radius:9px;
+  background:#fff;
+  cursor:pointer;
+  font-weight:bold;
+  font-size:14px;
+}
+
+.editbox .actions button:first-child{
+  background:#166534;
+  border-color:#166534;
+  color:#fff;
+}
+
+.editbox .actions button:hover{
+  opacity:.9;
+}
+
+/* Điện thoại */
+@media(max-width:560px){
+
+  .editbox{
+    padding:18px;
+    border-radius:14px;
+  }
+
+  .editbox h2{
+    font-size:21px;
+  }
+
+  .editbox input,
+  .editbox select,
+  .editbox textarea{
+    font-size:16px;
+  }
+
+  .editbox .actions{
+    flex-direction:column;
+  }
+
+  .editbox .actions button{
+    width:100%;
+  }
+}
