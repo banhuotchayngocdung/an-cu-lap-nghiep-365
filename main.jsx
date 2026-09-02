@@ -1,11 +1,13 @@
-import React,{useEffect,useState} from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
+
 import {
   BrowserRouter,
   Routes,
   Route,
   Link,
-  useParams
+  useParams,
+  Navigate
 } from "react-router-dom";
 
 import {
@@ -15,33 +17,43 @@ import {
   Phone,
   MessageCircle,
   RefreshCw,
-  ChevronLeft
+  ChevronLeft,
+  LogOut,
+  Pencil,
+  Save
 } from "lucide-react";
 
-import {supabase} from "./supabase";
+import { supabase } from "./supabase";
 import "./styles.css";
 
 
+/* =========================
+   NHÃN TRẠNG THÁI
+========================= */
+
 const labels = {
-  trong:"Đang trống",
-  sap_trong:"Sắp trống",
-  da_thue:"Đã thuê",
-  ngung:"Ngừng cho thuê"
+  trong: "Đang trống",
+  sap_trong: "Sắp trống",
+  da_thue: "Đã thuê",
+  ngung: "Ngừng cho thuê"
 };
 
 
-const money = v =>
+/* =========================
+   ĐỊNH DẠNG TIỀN
+========================= */
+
+const money = (v) =>
   v == null
     ? "Liên hệ"
-    : new Intl.NumberFormat("vi-VN").format(v)+" đ/tháng";
+    : new Intl.NumberFormat("vi-VN").format(v) + " đ/tháng";
 
 
 /* =========================
    APP
 ========================= */
 
-function App(){
-
+function App() {
   return (
     <BrowserRouter>
 
@@ -51,11 +63,12 @@ function App(){
           <Link to="/" className="brand">
 
             <span className="logo">
-              <Home size={21}/>
+              <Home size={21} />
             </span>
 
             <span>
               <b>An Cư Lập Nghiệp 365</b>
+
               <small>
                 Phòng trọ • Nhà ở • An cư
               </small>
@@ -75,18 +88,18 @@ function App(){
 
         <Route
           path="/"
-          element={<Rooms/>}
+          element={<Rooms />}
         />
 
         <Route
           path="/phong/:code"
-          element={<Detail/>}
+          element={<Detail />}
         />
 
         <Route
-  path="/admin"
-  element={<AdminGate/>}
-/>
+          path="/admin"
+          element={<Admin />}
+        />
 
       </Routes>
 
@@ -104,12 +117,12 @@ function App(){
    DANH SÁCH PHÒNG
 ========================= */
 
-function Rooms(){
+function Rooms() {
 
-  const [rooms,setRooms] = useState([]);
-  const [q,setQ] = useState("");
-  const [loading,setLoading] = useState(true);
-  const [err,setErr] = useState("");
+  const [rooms, setRooms] = useState([]);
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
 
   const load = async () => {
@@ -117,17 +130,17 @@ function Rooms(){
     setLoading(true);
     setErr("");
 
-    const {data,error} = await supabase
+    const { data, error } = await supabase
       .from("rooms")
       .select("*")
       .order("code");
 
 
-    if(error){
+    if (error) {
 
       setErr(error.message);
 
-    }else{
+    } else {
 
       setRooms(data || []);
 
@@ -137,13 +150,13 @@ function Rooms(){
   };
 
 
-  useEffect(()=>{
+  useEffect(() => {
     load();
-  },[]);
+  }, []);
 
 
-  const list = rooms.filter(r =>
-    `${r.code} ${r.khu_vuc} ${r.dia_chi} ${r.loai_hinh}`
+  const list = rooms.filter((r) =>
+    `${r.code || ""} ${r.khu_vuc || ""} ${r.dia_chi || ""} ${r.loai_hinh || ""}`
       .toLowerCase()
       .includes(q.toLowerCase())
   );
@@ -163,7 +176,7 @@ function Rooms(){
 
           <h1>
             Tìm một nơi ở
-            <br/>
+            <br />
             <em>để an cư, để lập nghiệp.</em>
           </h1>
 
@@ -175,11 +188,11 @@ function Rooms(){
 
           <div className="search">
 
-            <Search size={20}/>
+            <Search size={20} />
 
             <input
               value={q}
-              onChange={e=>setQ(e.target.value)}
+              onChange={(e) => setQ(e.target.value)}
               placeholder="Tìm mã phòng, khu vực, địa chỉ..."
             />
 
@@ -199,7 +212,7 @@ function Rooms(){
           </b>
 
           <button onClick={load}>
-            <RefreshCw size={17}/>
+            <RefreshCw size={17} />
             Tải lại
           </button>
 
@@ -207,11 +220,9 @@ function Rooms(){
 
 
         {loading && (
-
           <div className="state">
             Đang tải danh sách phòng…
           </div>
-
         )}
 
 
@@ -221,7 +232,7 @@ function Rooms(){
 
             {err}
 
-            <br/>
+            <br />
 
             <small>
               Kiểm tra quyền SELECT của bảng rooms.
@@ -245,7 +256,7 @@ function Rooms(){
 
           <div className="grid">
 
-            {list.map(r => (
+            {list.map((r) => (
               <Card
                 key={r.id}
                 r={r}
@@ -259,9 +270,7 @@ function Rooms(){
       </section>
 
     </main>
-
   );
-
 }
 
 
@@ -269,18 +278,18 @@ function Rooms(){
    CARD PHÒNG
 ========================= */
 
-function Card({r}){
+function Card({ r }) {
 
   return (
 
     <Link
       className="card"
-      to={"/phong/"+encodeURIComponent(r.code)}
+      to={"/phong/" + encodeURIComponent(r.code)}
     >
 
       <div className="photo">
 
-        <Home size={38}/>
+        <Home size={38} />
 
         <b>
           {r.code}
@@ -298,7 +307,7 @@ function Card({r}){
           </b>
 
           <span
-            className={"badge "+r.trang_thai}
+            className={"badge " + r.trang_thai}
           >
             {labels[r.trang_thai] || r.trang_thai}
           </span>
@@ -313,11 +322,11 @@ function Card({r}){
 
         <div className="muted">
 
-          <MapPin size={15}/>
+          <MapPin size={15} />
 
           {r.dia_chi ||
-           r.khu_vuc ||
-           "Chưa cập nhật địa chỉ"}
+            r.khu_vuc ||
+            "Chưa cập nhật địa chỉ"}
 
         </div>
 
@@ -346,9 +355,7 @@ function Card({r}){
       </div>
 
     </Link>
-
   );
-
 }
 
 
@@ -356,40 +363,39 @@ function Card({r}){
    CHI TIẾT PHÒNG
 ========================= */
 
-function Detail(){
+function Detail() {
 
-  const {code} = useParams();
+  const { code } = useParams();
 
-  const [r,setR] = useState(null);
-  const [err,setErr] = useState("");
-
-
-  useEffect(()=>{
-
-    supabase
-      .from("rooms")
-      .select("*")
-      .eq("code",code)
-      .maybeSingle()
-
-      .then(({data,error})=>{
-
-        if(error){
-
-          setErr(error.message);
-
-        }else{
-
-          setR(data);
-
-        }
-
-      });
-
-  },[code]);
+  const [r, setR] = useState(null);
+  const [err, setErr] = useState("");
 
 
-  if(err){
+  useEffect(() => {
+
+    const load = async () => {
+
+      const { data, error } = await supabase
+        .from("rooms")
+        .select("*")
+        .eq("code", code)
+        .maybeSingle();
+
+
+      if (error) {
+        setErr(error.message);
+      } else {
+        setR(data);
+      }
+
+    };
+
+    load();
+
+  }, [code]);
+
+
+  if (err) {
 
     return (
       <div className="wrap state">
@@ -400,7 +406,7 @@ function Detail(){
   }
 
 
-  if(!r){
+  if (!r) {
 
     return (
       <div className="wrap state">
@@ -419,7 +425,7 @@ function Detail(){
         to="/"
         className="back"
       >
-        <ChevronLeft size={18}/>
+        <ChevronLeft size={18} />
         Danh sách phòng
       </Link>
 
@@ -428,7 +434,7 @@ function Detail(){
 
         <div className="bigphoto">
 
-          <Home size={70}/>
+          <Home size={70} />
 
           <b>
             {r.code}
@@ -440,7 +446,7 @@ function Detail(){
         <div>
 
           <span
-            className={"badge "+r.trang_thai}
+            className={"badge " + r.trang_thai}
           >
             {labels[r.trang_thai] || r.trang_thai}
           </span>
@@ -453,7 +459,7 @@ function Detail(){
 
           <div className="muted">
 
-            <MapPin size={18}/>
+            <MapPin size={18} />
 
             {r.dia_chi || r.khu_vuc}
 
@@ -493,10 +499,9 @@ function Detail(){
                 <small>Tiền cọc</small>
 
                 <b>
-                  {
-                    new Intl.NumberFormat("vi-VN")
-                      .format(r.tien_coc)
-                  } đ
+                  {new Intl.NumberFormat("vi-VN")
+                    .format(r.tien_coc)}{" "}
+                  đ
                 </b>
 
               </div>
@@ -530,9 +535,9 @@ function Detail(){
             {r.so_dien_thoai && (
 
               <a
-                href={"tel:"+r.so_dien_thoai}
+                href={"tel:" + r.so_dien_thoai}
               >
-                <Phone size={18}/>
+                <Phone size={18} />
                 Gọi ngay
               </a>
 
@@ -542,11 +547,11 @@ function Detail(){
             {r.so_zalo && (
 
               <a
-                href={"https://zalo.me/"+r.so_zalo}
+                href={"https://zalo.me/" + r.so_zalo}
                 target="_blank"
                 rel="noreferrer"
               >
-                <MessageCircle size={18}/>
+                <MessageCircle size={18} />
                 Zalo
               </a>
 
@@ -559,25 +564,108 @@ function Detail(){
       </div>
 
     </main>
-
   );
-
 }
 
 
 /* =========================
-   ĐĂNG NHẬP ADMIN
+   ADMIN
 ========================= */
 
-function AdminLogin(){
+function Admin() {
 
-  const [email,setEmail] = useState("");
-  const [password,setPassword] = useState("");
-  const [error,setError] = useState("");
-  const [loading,setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [checking, setChecking] = useState(true);
 
 
-  const login = async e => {
+  useEffect(() => {
+
+    let mounted = true;
+
+
+    const checkUser = async () => {
+
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+
+
+      if (mounted) {
+
+        setUser(user);
+        setChecking(false);
+
+      }
+
+    };
+
+
+    checkUser();
+
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+
+        setUser(session?.user || null);
+        setChecking(false);
+
+      }
+    );
+
+
+    return () => {
+
+      mounted = false;
+
+      subscription.unsubscribe();
+
+    };
+
+  }, []);
+
+
+  if (checking) {
+
+    return (
+      <main className="wrap adminpage">
+        <div className="state">
+          Đang kiểm tra đăng nhập…
+        </div>
+      </main>
+    );
+
+  }
+
+
+  if (!user) {
+    return <AdminLogin />;
+  }
+
+
+  return (
+    <AdminManager
+      user={user}
+    />
+  );
+}
+
+
+/* =========================
+   ĐĂNG NHẬP
+========================= */
+
+function AdminLogin() {
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+
+  const login = async (e) => {
 
     e.preventDefault();
 
@@ -585,24 +673,20 @@ function AdminLogin(){
     setError("");
 
 
-    const {error} =
+    const { error } =
       await supabase.auth.signInWithPassword({
 
-        email,
+        email: email.trim(),
         password
 
       });
 
 
-    if(error){
+    if (error) {
 
       setError(
         "Email hoặc mật khẩu không đúng."
       );
-
-    }else{
-
-      window.location.href="/admin";
 
     }
 
@@ -635,7 +719,9 @@ function AdminLogin(){
           type="email"
           placeholder="Email quản trị"
           value={email}
-          onChange={e=>setEmail(e.target.value)}
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
           required
         />
 
@@ -644,7 +730,9 @@ function AdminLogin(){
           type="password"
           placeholder="Mật khẩu"
           value={password}
-          onChange={e=>setPassword(e.target.value)}
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
           required
         />
 
@@ -672,486 +760,231 @@ function AdminLogin(){
       </form>
 
     </main>
-
-  );
-
-}
-/* =========================
-   KIỂM TRA ĐĂNG NHẬP ADMIN
-========================= */
-
-function AdminGate(){
-
-  const [user,setUser] = useState(null);
-  const [loading,setLoading] = useState(true);
-
-  useEffect(()=>{
-
-    const checkUser = async()=>{
-
-      const {data} = await supabase.auth.getUser();
-
-      setUser(data.user || null);
-      setLoading(false);
-
-    };
-
-    checkUser();
-
-  },[]);
-
-  if(loading){
-
-    return (
-      <main className="wrap adminpage">
-        <div className="state">
-          Đang kiểm tra đăng nhập…
-        </div>
-      </main>
-    );
-
-  }
-
-  if(!user){
-
-    return <AdminLogin/>;
-
-  }
-
-  return <Admin/>;
-
-}
-
-
-/* =========================
-   ADMIN
-========================= */
-
-function Admin(){
-  const [rooms,setRooms]=useState([]);
-  const [msg,setMsg]=useState("");
-  const [editing,setEditing]=useState(null);
-  const [saving,setSaving]=useState(false);
-
-  const load=async()=>{
-    setMsg("");
-
-    const {data,error}=await supabase
-      .from("rooms")
-      .select("*")
-      .order("code");
-
-    if(error){
-      setMsg(error.message);
-    }else{
-      setRooms(data||[]);
-    }
-  };
-
-  useEffect(()=>{
-    load();
-  },[]);
-
-  const editRoom=(r)=>{
-    setEditing({...r});
-    setMsg("");
-  };
-
-  const saveRoom=async()=>{
-    if(!editing) return;
-
-    setSaving(true);
-    setMsg("");
-
-    const {error}=await supabase
-      .from("rooms")
-      .update({
-        code: editing.code,
-        khu_vuc: editing.khu_vuc,
-        dia_chi: editing.dia_chi,
-        loai_hinh: editing.loai_hinh,
-        gia_thue: editing.gia_thue
-          ? Number(editing.gia_thue)
-          : null,
-        tien_coc: editing.tien_coc
-          ? Number(editing.tien_coc)
-          : null,
-        dien_tich: editing.dien_tich
-          ? Number(editing.dien_tich)
-          : null,
-        tang: editing.tang
-          ? Number(editing.tang)
-          : null,
-        mo_ta: editing.mo_ta,
-        noi_that: editing.noi_that,
-        so_dien_thoai: editing.so_dien_thoai,
-        so_zalo: editing.so_zalo,
-        trang_thai: editing.trang_thai
-      })
-      .eq("id",editing.id);
-
-    setSaving(false);
-
-    if(error){
-      setMsg(error.message);
-      return;
-    }
-
-    setMsg("✅ Đã lưu thông tin phòng.");
-
-    setEditing(null);
-
-    load();
-  };
-
-  return (
-    <main className="wrap adminpage">
-
-      <h1>Quản lý phòng</h1>
-
-      <p>
-        Đang đăng nhập: <b>tài khoản quản trị</b>
-      </p>
-
-      {msg && (
-        <div className="error">
-          {msg}
-        </div>
-      )}
-
-      {!editing && (
-        <div className="table">
-
-          {rooms.map(r=>(
-            <div className="tr" key={r.id}>
-
-              <div>
-                <b>{r.code}</b>
-
-                <small>
-                  {r.dia_chi || r.khu_vuc || ""}
-                </small>
-              </div>
-
-              <div>
-                <span className={"badge "+r.trang_thai}>
-                  {labels[r.trang_thai] || r.trang_thai}
-                </span>
-
-                <button
-                  onClick={()=>editRoom(r)}
-                  style={{marginLeft:"10px"}}
-                >
-                  Sửa
-                </button>
-              </div>
-
-            </div>
-          ))}
-
-        </div>
-      )}
-
-      {editing && (
-        <div className="editbox">
-
-          <h2>Sửa phòng {editing.code}</h2>
-
-          <label>
-            Mã phòng
-            <input
-              value={editing.code || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  code:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Khu vực
-            <input
-              value={editing.khu_vuc || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  khu_vuc:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Địa chỉ
-            <input
-              value={editing.dia_chi || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  dia_chi:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Loại hình
-            <input
-              value={editing.loai_hinh || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  loai_hinh:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Giá thuê
-            <input
-              type="number"
-              value={editing.gia_thue || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  gia_thue:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Tiền cọc
-            <input
-              type="number"
-              value={editing.tien_coc || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  tien_coc:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Diện tích (m²)
-            <input
-              type="number"
-              value={editing.dien_tich || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  dien_tich:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Tầng
-            <input
-              type="number"
-              value={editing.tang || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  tang:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Nội thất
-            <textarea
-              value={editing.noi_that || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  noi_that:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Mô tả
-            <textarea
-              value={editing.mo_ta || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  mo_ta:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Số điện thoại
-            <input
-              value={editing.so_dien_thoai || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  so_dien_thoai:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Số Zalo
-            <input
-              value={editing.so_zalo || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  so_zalo:e.target.value
-                })
-              }
-            />
-          </label>
-
-          <label>
-            Trạng thái
-
-            <select
-              value={editing.trang_thai || ""}
-              onChange={e=>
-                setEditing({
-                  ...editing,
-                  trang_thai:e.target.value
-                })
-              }
-            >
-              <option value="trong">
-                Đang trống
-              </option>
-
-              <option value="sap_trong">
-                Sắp trống
-              </option>
-
-              <option value="da_thue">
-                Đã thuê
-              </option>
-
-              <option value="ngung">
-                Ngừng cho thuê
-              </option>
-            </select>
-          </label>
-
-          <div className="actions">
-
-            <button
-              onClick={saveRoom}
-              disabled={saving}
-            >
-              {saving ? "Đang lưu..." : "💾 Lưu thay đổi"}
-            </button>
-
-            <button
-              onClick={()=>setEditing(null)}
-              disabled={saving}
-            >
-              Hủy
-            </button>
-
-          </div>
-
-        </div>
-      )}
-
-    </main>
   );
 }
 
+
 /* =========================
-   ADMIN PANEL
+   QUẢN LÝ PHÒNG
 ========================= */
 
-function AdminPanel({user}){
+function AdminManager({ user }) {
 
-  const [rooms,setRooms] = useState([]);
-  const [msg,setMsg] = useState("");
+  const [rooms, setRooms] = useState([]);
+
+  const [editing, setEditing] = useState(null);
+
+  const [msg, setMsg] = useState("");
+
+  const [error, setError] = useState("");
+
+  const [loading, setLoading] = useState(true);
+
+  const [saving, setSaving] = useState(false);
 
 
-  const load = async()=>{
+  /* =========================
+     TẢI PHÒNG
+  ========================= */
 
-    const {data,error} =
+  const load = async () => {
+
+    setLoading(true);
+
+    setError("");
+
+    const { data, error } =
       await supabase
         .from("rooms")
         .select("*")
         .order("code");
 
 
-    if(error){
+    if (error) {
 
-      setMsg(error.message);
+      setError(error.message);
 
-    }else{
+    } else {
 
       setRooms(data || []);
 
     }
 
+    setLoading(false);
   };
 
 
-  useEffect(()=>{
-
+  useEffect(() => {
     load();
+  }, []);
 
-  },[]);
 
+  /* =========================
+     BẤM SỬA
+  ========================= */
 
-  const update = async(id,value)=>{
+  const editRoom = (room) => {
+
+    setEditing({
+      ...room
+    });
 
     setMsg("");
+    setError("");
+  };
 
 
-    const {error} =
-      await supabase
-        .from("rooms")
-        .update({
-          trang_thai:value
-        })
-        .eq("id",id);
+  /* =========================
+     THAY ĐỔI FIELD
+  ========================= */
 
+  const changeField = (field, value) => {
 
-    if(error){
-
-      setMsg(error.message);
-
-    }else{
-
-      load();
-
-    }
+    setEditing((old) => ({
+      ...old,
+      [field]: value
+    }));
 
   };
 
 
-  const logout = async()=>{
+  /* =========================
+     LƯU SUPABASE
+  ========================= */
+
+  const saveRoom = async () => {
+
+    if (!editing) return;
+
+
+    setSaving(true);
+    setMsg("");
+    setError("");
+
+
+    const updateData = {
+
+      code: editing.code || null,
+
+      khu_vuc:
+        editing.khu_vuc || null,
+
+      dia_chi:
+        editing.dia_chi || null,
+
+      loai_hinh:
+        editing.loai_hinh || null,
+
+      gia_thue:
+        editing.gia_thue !== "" &&
+        editing.gia_thue != null
+          ? Number(editing.gia_thue)
+          : null,
+
+      tien_coc:
+        editing.tien_coc !== "" &&
+        editing.tien_coc != null
+          ? Number(editing.tien_coc)
+          : null,
+
+      dien_tich:
+        editing.dien_tich !== "" &&
+        editing.dien_tich != null
+          ? Number(editing.dien_tich)
+          : null,
+
+      tang:
+        editing.tang !== "" &&
+        editing.tang != null
+          ? Number(editing.tang)
+          : null,
+
+      mo_ta:
+        editing.mo_ta || null,
+
+      noi_that:
+        editing.noi_that || null,
+
+      so_dien_thoai:
+        editing.so_dien_thoai || null,
+
+      so_zalo:
+        editing.so_zalo || null,
+
+      trang_thai:
+        editing.trang_thai || "trong"
+    };
+
+
+    const { data, error } =
+      await supabase
+        .from("rooms")
+        .update(updateData)
+        .eq("id", editing.id)
+        .select()
+        .single();
+
+
+    setSaving(false);
+
+
+    if (error) {
+
+      console.error(error);
+
+      setError(
+        "Không lưu được: " + error.message
+      );
+
+      return;
+    }
+
+
+    console.log("Đã lưu:", data);
+
+
+    setMsg(
+      "✅ Đã lưu thông tin phòng " +
+      editing.code
+    );
+
+
+    setEditing(null);
+
+
+    await load();
+
+  };
+
+
+  /* =========================
+     ĐĂNG XUẤT
+  ========================= */
+
+  const logout = async () => {
 
     await supabase.auth.signOut();
 
-    window.location.href="/admin";
-
   };
 
+
+  /* =========================
+     GIAO DIỆN
+  ========================= */
 
   return (
 
     <main className="wrap adminpage">
 
-      <div className="admin-head">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "15px",
+          marginBottom: "20px"
+        }}
+      >
 
         <div>
 
@@ -1160,14 +993,29 @@ function AdminPanel({user}){
           </h1>
 
           <p>
-            Đang đăng nhập: {user.email}
+            Đang đăng nhập:{" "}
+            <b>
+              {user.email}
+            </b>
           </p>
 
         </div>
 
 
-        <button onClick={logout}>
+        <button
+          onClick={logout}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "9px 12px"
+          }}
+        >
+
+          <LogOut size={17} />
+
           Đăng xuất
+
         </button>
 
       </div>
@@ -1175,40 +1023,352 @@ function AdminPanel({user}){
 
       {msg && (
 
-        <div className="error">
+        <div
+          style={{
+            background: "#e5f6e9",
+            color: "#147332",
+            border: "1px solid #c9e8cf",
+            padding: "14px",
+            borderRadius: "10px",
+            marginBottom: "15px"
+          }}
+        >
           {msg}
         </div>
 
       )}
 
 
-      <div className="table">
+      {error && (
 
-        {rooms.map(r=>(
+        <div className="error">
+          {error}
+        </div>
 
-          <div
-            className="tr"
-            key={r.id}
-          >
+      )}
 
-            <div>
 
-              <b>
-                {r.code}
-              </b>
+      {loading && (
 
-              <small>
-                {r.dia_chi || r.khu_vuc || ""}
-              </small>
+        <div className="state">
+          Đang tải danh sách phòng…
+        </div>
 
+      )}
+
+
+      {!loading && !editing && (
+
+        <div className="table">
+
+          {rooms.length === 0 ? (
+
+            <div className="state">
+              Chưa có phòng.
             </div>
 
+          ) : (
+
+            rooms.map((r) => (
+
+              <div
+                className="tr"
+                key={r.id}
+              >
+
+                <div>
+
+                  <b>
+                    {r.code}
+                  </b>
+
+                  <small>
+                    {r.dia_chi ||
+                      r.khu_vuc ||
+                      "Chưa có địa chỉ"}
+                  </small>
+
+                </div>
+
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}
+                >
+
+                  <span
+                    className={
+                      "badge " +
+                      r.trang_thai
+                    }
+                  >
+                    {labels[r.trang_thai] ||
+                      r.trang_thai}
+                  </span>
+
+
+                  <button
+                    onClick={() =>
+                      editRoom(r)
+                    }
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px"
+                    }}
+                  >
+
+                    <Pencil size={15} />
+
+                    Sửa
+
+                  </button>
+
+                </div>
+
+              </div>
+
+            ))
+
+          )}
+
+        </div>
+
+      )}
+
+
+      {/* =========================
+          FORM SỬA
+      ========================= */}
+
+      {editing && (
+
+        <div
+          className="editbox"
+          style={{
+            background: "#fff",
+            border: "1px solid #e1e6e1",
+            borderRadius: "16px",
+            padding: "22px"
+          }}
+        >
+
+          <h2>
+            Sửa phòng {editing.code}
+          </h2>
+
+
+          <label>
+            Mã phòng
+
+            <input
+              value={editing.code || ""}
+              onChange={(e) =>
+                changeField(
+                  "code",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Khu vực
+
+            <input
+              value={editing.khu_vuc || ""}
+              onChange={(e) =>
+                changeField(
+                  "khu_vuc",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Địa chỉ
+
+            <input
+              value={editing.dia_chi || ""}
+              onChange={(e) =>
+                changeField(
+                  "dia_chi",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Loại hình
+
+            <input
+              value={editing.loai_hinh || ""}
+              onChange={(e) =>
+                changeField(
+                  "loai_hinh",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Giá thuê
+
+            <input
+              type="number"
+              value={editing.gia_thue ?? ""}
+              onChange={(e) =>
+                changeField(
+                  "gia_thue",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Tiền cọc
+
+            <input
+              type="number"
+              value={editing.tien_coc ?? ""}
+              onChange={(e) =>
+                changeField(
+                  "tien_coc",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Diện tích (m²)
+
+            <input
+              type="number"
+              value={editing.dien_tich ?? ""}
+              onChange={(e) =>
+                changeField(
+                  "dien_tich",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Tầng
+
+            <input
+              type="number"
+              value={editing.tang ?? ""}
+              onChange={(e) =>
+                changeField(
+                  "tang",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Nội thất
+
+            <textarea
+              value={editing.noi_that || ""}
+              onChange={(e) =>
+                changeField(
+                  "noi_that",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Mô tả
+
+            <textarea
+              value={editing.mo_ta || ""}
+              onChange={(e) =>
+                changeField(
+                  "mo_ta",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Số điện thoại
+
+            <input
+              value={
+                editing.so_dien_thoai || ""
+              }
+              onChange={(e) =>
+                changeField(
+                  "so_dien_thoai",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Số Zalo
+
+            <input
+              value={editing.so_zalo || ""}
+              onChange={(e) =>
+                changeField(
+                  "so_zalo",
+                  e.target.value
+                )
+              }
+            />
+
+          </label>
+
+
+          <label>
+            Trạng thái
 
             <select
-              value={r.trang_thai || ""}
-              onChange={e =>
-                update(
-                  r.id,
+              value={
+                editing.trang_thai || "trong"
+              }
+              onChange={(e) =>
+                changeField(
+                  "trang_thai",
                   e.target.value
                 )
               }
@@ -1227,26 +1387,72 @@ function AdminPanel({user}){
               </option>
 
               <option value="ngung">
-                Ngừng
+                Ngừng cho thuê
               </option>
 
             </select>
 
+          </label>
+
+
+          <div
+            className="actions"
+            style={{
+              marginTop: "22px"
+            }}
+          >
+
+            <button
+              onClick={saveRoom}
+              disabled={saving}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "7px",
+                background: "#166534",
+                color: "#fff",
+                padding: "12px 16px",
+                border: 0,
+                borderRadius: "10px",
+                fontWeight: "bold"
+              }}
+            >
+
+              <Save size={18} />
+
+              {saving
+                ? "Đang lưu..."
+                : "Lưu thay đổi"}
+
+            </button>
+
+
+            <button
+              onClick={() =>
+                setEditing(null)
+              }
+              disabled={saving}
+            >
+              Hủy
+            </button>
+
           </div>
 
-        ))}
+        </div>
 
-      </div>
+      )}
 
     </main>
-
   );
-
 }
 
+
+/* =========================
+   RENDER
+========================= */
 
 ReactDOM
   .createRoot(
     document.getElementById("root")
   )
-  .render(<App/>);
+  .render(<App />);
