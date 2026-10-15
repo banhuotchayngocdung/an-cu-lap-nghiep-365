@@ -1087,7 +1087,7 @@ function AdminManager({ user }) {
 
 
       {!loading && !editing && (
-
+        <>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
           <b>Tổng số phòng: {rooms.length}</b>
           <button type="button" onClick={addRoom}
@@ -1165,7 +1165,7 @@ function AdminManager({ user }) {
           )}
 
         </div>
-
+        </>
       )}
 
 
