@@ -20,7 +20,9 @@ import {
   ChevronLeft,
   LogOut,
   Pencil,
-  Save
+  Save,
+  Plus,
+  Trash2
 } from "lucide-react";
 
 import { supabase } from "./supabase";
@@ -773,6 +775,7 @@ function AdminManager({ user }) {
   const [rooms, setRooms] = useState([]);
 
   const [editing, setEditing] = useState(null);
+  const [creating, setCreating] = useState(false);
 
   const [msg, setMsg] = useState("");
 
@@ -823,14 +826,38 @@ function AdminManager({ user }) {
      BẤM SỬA
   ========================= */
 
-  const editRoom = (room) => {
+  const emptyRoom = () => ({
+    code: "", khu_vuc: "", dia_chi: "", loai_hinh: "Phòng trọ",
+    gia_thue: "", tien_coc: "", dien_tich: "", tang: "",
+    mo_ta: "", noi_that: "", so_dien_thoai: "", so_zalo: "",
+    trang_thai: "trong"
+  });
 
-    setEditing({
-      ...room
-    });
-
+  const addRoom = () => {
+    setEditing(emptyRoom());
+    setCreating(true);
     setMsg("");
     setError("");
+  };
+
+  const editRoom = (room) => {
+    setEditing({ ...room });
+    setCreating(false);
+    setMsg("");
+    setError("");
+  };
+
+  const deleteRoom = async (room) => {
+    if (!window.confirm(`Bạn chắc chắn muốn xóa phòng ${room.code}? Thao tác này không thể hoàn tác.`)) return;
+    setError("");
+    setMsg("");
+    const { error } = await supabase.from("rooms").delete().eq("id", room.id);
+    if (error) {
+      setError("Không xóa được phòng: " + error.message);
+      return;
+    }
+    setMsg("Đã xóa phòng " + room.code);
+    await load();
   };
 
 
@@ -916,13 +943,14 @@ function AdminManager({ user }) {
     };
 
 
-    const { data, error } =
-      await supabase
-        .from("rooms")
-        .update(updateData)
-        .eq("id", editing.id)
-        .select()
-        .single();
+    let result;
+    if (creating) {
+      result = await supabase.from("rooms").insert([updateData]).select().single();
+    } else {
+      result = await supabase.from("rooms").update(updateData)
+        .eq("id", editing.id).select().single();
+    }
+    const { data, error } = result;
 
 
     setSaving(false);
@@ -944,12 +972,13 @@ function AdminManager({ user }) {
 
 
     setMsg(
-      "✅ Đã lưu thông tin phòng " +
-      editing.code
+      creating
+        ? "✅ Đã thêm phòng " + editing.code
+        : "✅ Đã lưu thông tin phòng " + editing.code
     );
 
-
     setEditing(null);
+    setCreating(false);
 
 
     await load();
@@ -1059,6 +1088,14 @@ function AdminManager({ user }) {
 
       {!loading && !editing && (
 
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
+          <b>Tổng số phòng: {rooms.length}</b>
+          <button type="button" onClick={addRoom}
+            style={{ display: "flex", alignItems: "center", gap: "7px", background: "#166534", color: "#fff", padding: "11px 15px", border: 0, borderRadius: "10px", fontWeight: "bold" }}>
+            <Plus size={18} /> Thêm phòng mới
+          </button>
+        </div>
+
         <div className="table">
 
           {rooms.length === 0 ? (
@@ -1110,21 +1147,13 @@ function AdminManager({ user }) {
                   </span>
 
 
-                  <button
-                    onClick={() =>
-                      editRoom(r)
-                    }
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px"
-                    }}
-                  >
-
-                    <Pencil size={15} />
-
-                    Sửa
-
+                  <button type="button" onClick={() => editRoom(r)}
+                    style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <Pencil size={15} /> Sửa
+                  </button>
+                  <button type="button" onClick={() => deleteRoom(r)}
+                    style={{ display: "flex", alignItems: "center", gap: "5px", color: "#b91c1c" }}>
+                    <Trash2 size={15} /> Xóa
                   </button>
 
                 </div>
@@ -1157,7 +1186,7 @@ function AdminManager({ user }) {
         >
 
           <h2>
-            Sửa phòng {editing.code}
+            {creating ? "Thêm phòng mới" : `Sửa phòng ${editing.code}`}
           </h2>
 
 
@@ -1428,9 +1457,11 @@ function AdminManager({ user }) {
 
 
             <button
-              onClick={() =>
-                setEditing(null)
-              }
+              onClick={() => {
+                setEditing(null);
+                setCreating(false);
+                setError("");
+              }}
               disabled={saving}
             >
               Hủy
